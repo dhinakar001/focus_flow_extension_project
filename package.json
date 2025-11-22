@@ -46,7 +46,6 @@
     "dotenv": "^16.4.0",
     "axios": "^1.7.0",
     "pg": "^8.11.3",
-<<<<<<< HEAD
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "express-rate-limit": "^7.1.5",
@@ -56,8 +55,6 @@
     "uuid": "^9.0.1",
     "stripe": "^14.7.0",
     "razorpay": "^2.9.2",
-=======
->>>>>>> origin/main
     "node-cron": "^3.0.3"
   },
   "devDependencies": {
