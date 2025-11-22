@@ -1,0 +1,67 @@
+{
+  "name": "focusflow",
+  "version": "2.0.2",
+  "description": "FocusFlow - AI-powered productivity dashboard for teams. Production-ready with enterprise security, performance optimizations, and comprehensive features.",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development node server/index.js",
+    "start": "NODE_ENV=production node server/index.js",
+    "build": "echo 'Backend build not required - Node.js runtime'",
+    "lint": "eslint . --ext .js,.jsx",
+    "lint:fix": "eslint . --ext .js,.jsx --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "migrate": "node scripts/migrate.js",
+    "migrate:create": "node scripts/migrate-create.js",
+    "health": "curl http://localhost:4000/health || echo 'Server not running'",
+    "format": "prettier --write \"**/*.{js,jsx,json,md}\""
+  },
+  "keywords": [
+    "productivity",
+    "focus",
+    "dashboard",
+    "ai",
+    "analytics",
+    "zoho-cliq",
+    "saas",
+    "time-tracking"
+  ],
+  "author": "FocusFlow Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusflow/focusflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/focusflow/focusflow/issues"
+  },
+  "homepage": "https://focusflow.app",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "dotenv": "^16.4.0",
+    "axios": "^1.7.0",
+    "pg": "^8.11.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "express-validator": "^7.0.1",
+    "uuid": "^9.0.1",
+    "stripe": "^14.7.0",
+    "razorpay": "^2.9.2",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.1.0"
+  },
+  "preferGlobal": false,
+  "private": true
+}

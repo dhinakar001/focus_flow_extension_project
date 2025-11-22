@@ -1,0 +1,60 @@
+{
+  "name": "FocusFlow",
+  "version": "1.0.0",
+  "description": "Placeholder manifest for the FocusFlow Zoho Cliq extension.",
+  "author": {
+    "name": "FocusFlow Team",
+    "email": ["hdharshith7@gmail.com","dhinakar79044@gmail.com"]
+    
+
+  },
+  "homepage_url": "https://example.com/focusflow",
+  "scopes": [
+    "bot.entries.read",
+    "bot.entries.write",
+    "data.read"
+  ],
+  "config": {
+    "type": "extension",
+    "platform": "cliq",
+    "categories": ["productivity", "focus"],
+    "icon": "assets/icon.png",
+    "supported_locales": ["en_US"],
+    "settings": {
+      "requires_auth": true,
+      "webhook_url": "https://example.com/webhook"
+    }
+  },
+  "widgets": [
+    {
+      "name": "FocusFlow Dashboard",
+      "url": "widgets/focusflow-dashboard.html",
+      "target": "channel",
+      "description": "Displays focus and productivity metrics."
+    }
+  ],
+  "bots": [
+    {
+      "name": "FocusFlow Bot",
+      "handler": "bots/FocusFlow_Bot.dg",
+      "description": "Handles focus mode interactions."
+    }
+  ],
+  "functions": [
+    {
+      "name": "sample_function",
+      "path": "functions/sample_function.deluge",
+      "description": "Sample function placeholder."
+    }
+  ],
+  "events": {
+    "onInstall": {
+      "handler": "server/index.js",
+      "description": "Initializes placeholder resources."
+    },
+    "onUninstall": {
+      "handler": "server/index.js",
+      "description": "Cleans up placeholder resources."
+    }
+  }
+}
