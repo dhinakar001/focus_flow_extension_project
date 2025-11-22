@@ -1,0 +1,4 @@
+// FocusFlow bot definition placeholder
+// This Deluge script handles sample bot commands for Zoho Cliq.
+
+response.put("text", "FocusFlow bot is active. Replace this script with real interactions.");

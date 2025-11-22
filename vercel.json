@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "name": "focusflow",
+  "builds": [
+    { "src": "server/index.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "server/index.js" },
+    { "src": "/widgets/(.*)", "dest": "/widgets/" }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "PYTHON_SERVICE_URL": "https://example.com/python"
+  }
+}

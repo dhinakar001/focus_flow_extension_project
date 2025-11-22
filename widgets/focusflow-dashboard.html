@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusFlow Dashboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: linear-gradient(to bottom right, #fafafa, #ffffff);
+        color: #171717;
+      }
+      
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="focusflow-dashboard-root" class="min-h-screen p-4 sm:p-6"></div>
+
+    <script>
+      const { createElement: h, useState, useEffect } = React;
+      const { createRoot } = ReactDOM;
+
+      // Focus Timer Component
+      function FocusTimer() {
+        const [isRunning, setIsRunning] = useState(false);
+        const [timeRemaining, setTimeRemaining] = useState(50 * 60);
+        const [selectedDuration, setSelectedDuration] = useState(50);
+        const [mode, setMode] = useState('focus');
+
+        useEffect(() => {
+          let interval = null;
+          if (isRunning && timeRemaining > 0) {
+            interval = setInterval(() => {
+              setTimeRemaining(prev => {
+                if (prev <= 1) {
+                  setIsRunning(false);
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
+          }
+          return () => clearInterval(interval);
+        }, [isRunning, timeRemaining]);
+
+        const formatTime = (seconds) => {
+          const mins = Math.floor(seconds / 60);
+          const secs = seconds % 60;
+          return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        const totalSeconds = selectedDuration * 60;
+        const progress = ((totalSeconds - timeRemaining) / totalSeconds) * 100;
+
+        const modes = [
+          { id: 'focus', label: 'Focus', color: 'bg-blue-600' },
+          { id: 'break', label: 'Break', color: 'bg-green-600' },
+          { id: 'meeting', label: 'Meeting', color: 'bg-orange-600' },
+        ];
+
+        return h('div', {
+          className: 'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6 animate-fade-in'
+        }, [
+          h('div', {
+            className: `bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6`,
+            key: 'header'
+          }, [
+            h('div', { className: 'flex items-center justify-between' }, [
+              h('h2', { className: 'text-xl font-bold text-white' }, 'Focus Timer'),
+              h('span', {
+                className: 'px-3 py-1 bg-white/20 text-white text-sm font-medium rounded-full border border-white/30'
+              }, modes.find(m => m.id === mode)?.label || 'Focus')
+            ])
+          ]),
+          h('div', { className: 'p-6', key: 'content' }, [
+            h('div', { className: 'text-center mb-6' }, [
+              h('div', { className: 'text-6xl font-bold text-gray-900 mb-4 font-mono' },
+                formatTime(timeRemaining)
+              ),
+              h('div', { className: 'relative h-2 w-full bg-gray-200 rounded-full overflow-hidden' }, [
+                h('div', {
+                  className: 'h-full bg-blue-600 transition-all duration-500',
+                  style: { width: `${progress}%` }
+                })
+              ])
+            ]),
+            h('div', { className: 'flex gap-2 mb-6 justify-center' },
+              modes.map(m => h('button', {
+                key: m.id,
+                className: `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  mode === m.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`,
+                onClick: () => setMode(m.id)
+              }, m.label))
+            ),
+            h('div', { className: 'mb-6' }, [
+              h('label', {
+                className: 'text-sm font-medium text-gray-700 mb-2 block'
+              }, 'Duration'),
+              h('div', { className: 'grid grid-cols-4 gap-2' },
+                [25, 50, 90, 120].map(mins => h('button', {
+                  key: mins,
+                  className: `px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    selectedDuration === mins
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`,
+                  onClick: () => {
+                    setSelectedDuration(mins);
+                    setTimeRemaining(mins * 60);
+                    setIsRunning(false);
+                  }
+                }, `${mins}m`))
+              )
+            ]),
+            h('div', { className: 'flex gap-3' }, [
+              !isRunning ? h('button', {
+                className: 'flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2',
+                onClick: () => setIsRunning(true)
+              }, [h('span', null, '▶'), ' Start']) : h('button', {
+                className: 'flex-1 bg-gray-100 text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2',
+                onClick: () => setIsRunning(false)
+              }, [h('span', null, '⏸'), ' Pause']),
+              h('button', {
+                className: 'bg-gray-100 text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors',
+                onClick: () => {
+                  setIsRunning(false);
+                  setTimeRemaining(selectedDuration * 60);
+                },
+                disabled: !isRunning && timeRemaining === selectedDuration * 60
+              }, '⏹')
+            ])
+          ])
+        ]);
+      }
+
+      // Stats Card Component
+      function StatsCard({ title, value, change, changeType, icon }) {
+        return h('div', {
+          className: 'bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow'
+        }, [
+          h('div', { className: 'flex items-center justify-between' }, [
+            h('div', { className: 'flex-1' }, [
+              h('p', { className: 'text-sm font-medium text-gray-500 mb-1' }, title),
+              h('p', { className: 'text-2xl font-bold text-gray-900' }, value),
+              change !== undefined && h('div', {
+                className: `flex items-center mt-2 text-sm font-medium ${
+                  changeType === 'up' ? 'text-green-600' :
+                  changeType === 'down' ? 'text-red-600' : 'text-gray-500'
+                }`
+              }, [
+                h('span', null, changeType === 'up' ? '↑' : changeType === 'down' ? '↓' : '—'),
+                h('span', { className: 'ml-1' }, `${Math.abs(change)}%`),
+                h('span', { className: 'ml-1 text-gray-500' }, 'vs last week')
+              ])
+            ]),
+            icon && h('div', {
+              className: 'ml-4 p-3 rounded-lg bg-blue-100'
+            }, h(icon, { className: 'w-6 h-6 text-blue-600' }))
+          ])
+        ]);
+      }
+
+      // Analytics Panel Component
+      function AnalyticsPanel() {
+        const stats = [
+          { title: 'Focus Time Today', value: '3h 42m', change: 12, changeType: 'up' },
+          { title: 'Sessions Completed', value: '5', change: 8, changeType: 'up' },
+          { title: 'Messages Blocked', value: '23', change: -5, changeType: 'down' },
+          { title: 'Productivity Score', value: '87', change: 3, changeType: 'up' },
+        ];
+
+        return h('div', { className: 'space-y-6' }, [
+          h('div', {
+            className: 'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden'
+          }, [
+            h('div', { className: 'p-6 border-b border-gray-200' }, [
+              h('h2', { className: 'text-lg font-semibold text-gray-900' }, "Today's Analytics"),
+              h('p', { className: 'text-sm text-gray-500 mt-1' }, 'Your productivity metrics for today')
+            ]),
+            h('div', { className: 'p-6' }, [
+              h('div', {
+                className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+              }, stats.map((stat, i) => h(StatsCard, { ...stat, key: i })))
+            ])
+          ])
+        ]);
+      }
+
+      // Quick Actions Component
+      function QuickActions() {
+        const actions = [
+          { label: 'Focus 50min', icon: '⚡', color: 'bg-blue-600' },
+          { label: 'Break 10min', icon: '☕', color: 'bg-green-600' },
+          { label: 'Schedule', icon: '📅', color: 'bg-gray-100' },
+          { label: 'Settings', icon: '⚙️', color: 'bg-gray-100' },
+        ];
+
+        return h('div', {
+          className: 'bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6'
+        }, [
+          h('div', { className: 'p-6 border-b border-gray-200' }, [
+            h('h2', { className: 'text-lg font-semibold text-gray-900' }, 'Quick Actions')
+          ]),
+          h('div', { className: 'p-6' }, [
+            h('div', {
+              className: 'grid grid-cols-2 gap-3'
+            }, actions.map((action, i) => h('button', {
+              key: i,
+              className: `flex flex-col items-center justify-center h-24 gap-2 rounded-lg ${action.color} text-white font-medium hover:opacity-90 transition-opacity`,
+              onClick: () => console.log(action.label)
+            }, [
+              h('span', { className: 'text-2xl' }, action.icon),
+              h('span', { className: 'text-xs' }, action.label)
+            ])))
+          ])
+        ]);
+      }
+
+      // Main Dashboard Component
+      function Dashboard() {
+        return h('div', { className: 'min-h-screen' }, [
+          h('div', {
+            className: 'bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/80'
+          }, [
+            h('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' }, [
+              h('div', {
+                className: 'flex h-16 items-center justify-between'
+              }, [
+                h('div', { className: 'flex items-center gap-3' }, [
+                  h('div', {
+                    className: 'flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600'
+                  }, h('span', { className: 'text-white font-bold' }, 'F')),
+                  h('div', null, [
+                    h('h1', { className: 'text-xl font-bold text-gray-900' }, 'FocusFlow'),
+                    h('p', { className: 'text-xs text-gray-500' }, 'Productivity Dashboard')
+                  ])
+                ])
+              ])
+            ])
+          ]),
+          h('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' }, [
+            h('div', {
+              className: 'grid grid-cols-1 lg:grid-cols-12 gap-6'
+            }, [
+              h('aside', { className: 'lg:col-span-4 space-y-6' }, [
+                h(FocusTimer, { key: 'timer' }),
+                h(QuickActions, { key: 'actions' })
+              ]),
+              h('div', { className: 'lg:col-span-8' }, [
+                h(AnalyticsPanel, { key: 'analytics' })
+              ])
+            ])
+          ])
+        ]);
+      }
+
+      // Initialize
+      const root = createRoot(document.getElementById('focusflow-dashboard-root'));
+      root.render(h(Dashboard));
+      
+      // Initialize Lucide icons
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    </script>
+  </body>
+</html>
