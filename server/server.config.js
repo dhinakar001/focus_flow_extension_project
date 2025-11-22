@@ -34,7 +34,9 @@ const serverConfig = {
     clientId: process.env.ZOHO_CLIENT_ID,
     clientSecret: process.env.ZOHO_CLIENT_SECRET,
     redirectUri: process.env.ZOHO_REDIRECT_URI,
-    scopes: (process.env.ZOHO_SCOPES || 'ZohoCliq.bots.CREATE,ZohoCliq.bots.READ').split(',').map((scope) => scope.trim()),
+    scopes: (process.env.ZOHO_SCOPES || 'ZohoCliq.bots.CREATE,ZohoCliq.bots.READ')
+      .split(',')
+      .map((scope) => scope.trim()),
     authorizeUrl: `${accountsBaseUrl}/oauth/v2/auth`,
     tokenUrl: `${accountsBaseUrl}/oauth/v2/token`,
     accountsBaseUrl
@@ -61,12 +63,12 @@ const serverConfig = {
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
     refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
     stateSecret: process.env.OAUTH_STATE_SECRET,
-    stateTtlMs: Number.parseInt(process.env.OAUTH_STATE_TTL_MS || '600000', 10), // 10 minutes
+    stateTtlMs: Number.parseInt(process.env.OAUTH_STATE_TTL_MS || '600000', 10),
     tokenEncryptionKey: process.env.TOKEN_ENCRYPTION_KEY,
     bcryptRounds: Number.parseInt(process.env.BCRYPT_ROUNDS || '12', 10)
   },
 
-  // Payment configuration
+  // Payments
   payments: {
     defaultProvider: process.env.DEFAULT_PAYMENT_PROVIDER || 'stripe',
     stripe: {
@@ -81,14 +83,18 @@ const serverConfig = {
     }
   },
 
-  // Logging configuration
+  // Logging
   logging: {
-<<<<<<< HEAD
     level: process.env.LOG_LEVEL || 'info',
-    format: process.env.LOG_FORMAT || 'text' // text or json
+    format: process.env.LOG_FORMAT || 'text'
   },
 
-  // Environment
+  // SSL section (merged)
+  ssl: {
+    rejectUnauthorized: false
+  },
+
+  // Environment metadata
   env: {
     nodeEnv: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
@@ -101,14 +107,7 @@ const serverConfig = {
     name: 'FocusFlow',
     version: process.env.npm_package_version || '2.0.0',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
-=======
-    level: process.env.LOG_LEVEL || 'debug'
-  },
-  ssl: {
-    rejectUnauthorized: false
->>>>>>> origin/main
   }
-  
 };
 
 // Validation: Check required configuration in production
