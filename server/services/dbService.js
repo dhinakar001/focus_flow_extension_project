@@ -19,9 +19,11 @@ const pool = new Pool({
   idleTimeoutMillis: serverConfig.database.idleTimeoutMillis || 30000,
   connectionTimeoutMillis: serverConfig.database.connectionTimeoutMillis || 5000,
   // SECURITY FIX: Only disable SSL validation in development
-  ssl: serverConfig.database.ssl ? {
-    rejectUnauthorized: serverConfig.env.isProduction // Only in production, require valid certs
-  } : false,
+  ssl: serverConfig.database.ssl
+    ? {
+        rejectUnauthorized: serverConfig.env.isProduction // Only in production, require valid certs
+      }
+    : false,
   // Query timeout to prevent hanging queries
   statement_timeout: 30000, // 30 seconds
   // Application name for monitoring
@@ -33,7 +35,9 @@ const ENCRYPTION_KEY = (() => {
   const raw = serverConfig.security.tokenEncryptionKey;
   if (!raw) {
     if (serverConfig.env.isProduction) {
-      throw new Error('TOKEN_ENCRYPTION_KEY environment variable is REQUIRED in production for secure token storage.');
+      throw new Error(
+        'TOKEN_ENCRYPTION_KEY environment variable is REQUIRED in production for secure token storage.'
+      );
     }
     logger.warn('TOKEN_ENCRYPTION_KEY not set - using development key (NOT SECURE FOR PRODUCTION)');
     // Development fallback - MUST be changed in production
@@ -81,34 +85,31 @@ function encrypt(value) {
  */
 function decrypt(payload) {
   if (!payload) return null;
-  
+
   try {
     const parts = payload.split(':');
     if (parts.length !== 3) {
       logger.warn('Invalid encrypted payload format');
       return null;
     }
-    
+
     const [ivB64, dataB64, tagB64] = parts;
-    
+
     // Validate base64 format
     if (!ivB64 || !dataB64 || !tagB64) {
       logger.warn('Missing parts in encrypted payload');
       return null;
     }
-    
+
     const iv = Buffer.from(ivB64, 'base64');
     const encrypted = Buffer.from(dataB64, 'base64');
     const authTag = Buffer.from(tagB64, 'base64');
-    
+
     const decipher = crypto.createDecipheriv(ALGORITHM, ENCRYPTION_KEY, iv);
     decipher.setAuthTag(authTag);
-    
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final()
-    ]);
-    
+
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+
     return decrypted.toString('utf8');
   } catch (error) {
     logger.error('Decryption failed', error, { payloadLength: payload?.length });
@@ -175,20 +176,23 @@ async function recordAuditEvent(eventName, metadata = {}, client = pool) {
  * @param {Object} client - Database client (optional)
  * @returns {Promise<Object>} Upserted credentials (decrypted)
  */
-async function upsertOAuthCredentials({
-  cliqUserId,
-  zohoUserId,
-  email,
-  accessToken,
-  refreshToken,
-  expiresIn,
-  scope,
-  tokenType
-}, client = pool) {
+async function upsertOAuthCredentials(
+  {
+    cliqUserId,
+    zohoUserId,
+    email,
+    accessToken,
+    refreshToken,
+    expiresIn,
+    scope,
+    tokenType
+  },
+  client = pool
+) {
   if (!cliqUserId || !accessToken || !expiresIn) {
     throw new Error('Missing required OAuth credential fields');
   }
-  
+
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
   const query = `
     INSERT INTO oauth_credentials (cliq_user_id, zoho_user_id, zoho_email, access_token_enc, refresh_token_enc, token_type, scope, expires_at, updated_at)
@@ -215,7 +219,7 @@ async function upsertOAuthCredentials({
     scope || '',
     expiresAt
   ];
-  
+
   try {
     const { rows } = await client.query(query, params);
     return hydrateCredential(rows[0]);
@@ -234,7 +238,7 @@ async function getOAuthCredentialsByCliqUserId(cliqUserId) {
   if (!cliqUserId) {
     return null;
   }
-  
+
   try {
     const query = 'SELECT * FROM oauth_credentials WHERE cliq_user_id = $1';
     const { rows } = await pool.query(query, [cliqUserId]);
@@ -258,7 +262,7 @@ async function updateAccessToken(cliqUserId, { accessToken, expiresIn, scope, to
   if (!cliqUserId || !accessToken || !expiresIn) {
     throw new Error('Missing required fields for token update');
   }
-  
+
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
   const query = `
     UPDATE oauth_credentials
@@ -270,14 +274,8 @@ async function updateAccessToken(cliqUserId, { accessToken, expiresIn, scope, to
     WHERE cliq_user_id = $1
     RETURNING *
   `;
-  const params = [
-    cliqUserId,
-    encrypt(accessToken),
-    scope || '',
-    tokenType || 'Bearer',
-    expiresAt
-  ];
-  
+  const params = [cliqUserId, encrypt(accessToken), scope || '', tokenType || 'Bearer', expiresAt];
+
   try {
     const { rows } = await pool.query(query, params);
     if (!rows.length) {
@@ -342,7 +340,7 @@ async function createFocusMode({ name, slug, description, durationMinutes }, cli
   if (!name || !slug || !durationMinutes) {
     throw new Error('Missing required fields for focus mode');
   }
-  
+
   const query = `
     INSERT INTO focus_modes (name, slug, description, duration_minutes)
     VALUES ($1, $2, $3, $4)
@@ -367,7 +365,7 @@ async function findModeByIdentifier(identifier, client = pool) {
   if (!identifier) {
     return null;
   }
-  
+
   const query = `
     SELECT id, name, slug, description, duration_minutes
     FROM focus_modes
@@ -401,7 +399,7 @@ async function getUserMode(userId, client = pool) {
       session: null
     };
   }
-  
+
   const query = `
     SELECT um.user_id,
            um.current_mode,
@@ -456,7 +454,7 @@ async function upsertUserMode({ userId, mode, sessionId }, client = pool) {
   if (!userId || !mode) {
     throw new Error('Missing required fields for user mode');
   }
-  
+
   const query = `
     INSERT INTO user_modes (user_id, current_mode, session_id, updated_at)
     VALUES ($1, $2, $3, NOW())
@@ -490,7 +488,7 @@ async function createFocusSession({ userId, modeLabel, durationMinutes }, client
   if (!userId || !modeLabel) {
     throw new Error('Missing required fields for focus session');
   }
-  
+
   const expectedEnd = durationMinutes ? new Date(Date.now() + durationMinutes * 60000) : null;
   const query = `
     INSERT INTO focus_sessions (user_id, mode_label, duration_minutes, expected_end)
@@ -516,7 +514,7 @@ async function endActiveFocusSessions(userId, client = pool) {
   if (!userId) {
     return;
   }
-  
+
   const query = `
     UPDATE focus_sessions
     SET ended_at = NOW()
@@ -541,7 +539,7 @@ async function endFocusSession(sessionId, client = pool) {
   if (!sessionId) {
     return null;
   }
-  
+
   const query = `
     UPDATE focus_sessions
     SET ended_at = COALESCE(ended_at, NOW())
@@ -567,7 +565,7 @@ async function getActiveFocusSession(userId, client = pool) {
   if (!userId) {
     return null;
   }
-  
+
   const query = `
     SELECT *
     FROM focus_sessions
@@ -595,7 +593,7 @@ async function incrementSessionInterruptions(sessionId, client = pool) {
   if (!sessionId) {
     throw new Error('Session ID required');
   }
-  
+
   const query = `
     UPDATE focus_sessions
     SET interruption_count = interruption_count + 1
@@ -624,14 +622,19 @@ async function logModeTransition({ userId, fromMode, toMode, reason }, client = 
   if (!userId || !toMode) {
     throw new Error('Missing required fields for mode transition');
   }
-  
+
   const query = `
     INSERT INTO mode_transitions (user_id, previous_mode, next_mode, reason)
     VALUES ($1, $2, $3, $4)
     RETURNING *
   `;
   try {
-    const { rows } = await client.query(query, [userId, fromMode || null, toMode, reason || null]);
+    const { rows } = await client.query(query, [
+      userId,
+      fromMode || null,
+      toMode,
+      reason || null
+    ]);
     return rows[0];
   } catch (error) {
     logger.error('Failed to log mode transition', error, { userId });
@@ -645,14 +648,17 @@ async function logModeTransition({ userId, fromMode, toMode, reason }, client = 
  * @param {Object} client - Database client (optional)
  * @returns {Promise<Object>} Created blocked message record
  */
-async function recordBlockedMessage({ userId, sessionId, channelId, messagePreview, payload }, client = pool) {
+async function recordBlockedMessage(
+  { userId, sessionId, channelId, messagePreview, payload },
+  client = pool
+) {
   if (!userId) {
     throw new Error('User ID required for blocked message');
   }
-  
+
   // Sanitize and truncate message preview
   const sanitizedPreview = messagePreview ? String(messagePreview).slice(0, 500) : null;
-  
+
   const query = `
     INSERT INTO blocked_messages (user_id, session_id, channel_id, message_preview, payload)
     VALUES ($1, $2, $3, $4, $5)
@@ -683,7 +689,7 @@ async function getModeSummary(userId, client = pool) {
   if (!userId) {
     throw new Error('User ID required for mode summary');
   }
-  
+
   const activeQuery = `
     SELECT fs.*
     FROM focus_sessions fs
@@ -818,20 +824,20 @@ async function getSessionSummaryParts(sessionId, client = pool) {
   if (!sessionId) {
     return null;
   }
-  
+
   const sessionQuery = `
     SELECT *
     FROM focus_sessions
     WHERE id = $1
   `;
-  
+
   try {
     const { rows } = await client.query(sessionQuery, [sessionId]);
     if (!rows.length) {
       return null;
     }
     const session = rows[0];
-    
+
     const [blockedMessages, transitions] = await Promise.all([
       client.query(
         `
@@ -853,7 +859,7 @@ async function getSessionSummaryParts(sessionId, client = pool) {
         [session.user_id, session.started_at, session.ended_at]
       )
     ]);
-    
+
     return {
       session,
       blockedMessages: blockedMessages.rows,
@@ -876,7 +882,7 @@ async function storeSessionSummary(sessionId, summary, client = pool) {
   if (!sessionId || !summary) {
     throw new Error('Session ID and summary required');
   }
-  
+
   return recordAuditEvent('focus_session_summary', { sessionId, summary }, client);
 }
 
@@ -921,7 +927,9 @@ async function getDailyUserSessionStats(dayStart, dayEnd, client = pool) {
       client.query(blockedQuery, [start, end])
     ]);
 
-    const blockedMap = new Map(blockedResult.rows.map((row) => [row.user_id, row.blocked_count]));
+    const blockedMap = new Map(
+      blockedResult.rows.map((row) => [row.user_id, row.blocked_count])
+    );
 
     return sessionsResult.rows.map((row) => ({
       userId: row.user_id,
@@ -938,14 +946,13 @@ async function getDailyUserSessionStats(dayStart, dayEnd, client = pool) {
   }
 }
 
-<<<<<<< HEAD
 /**
- * Logs a conversation event
- * @param {Object} eventData - Event data
+ * Gets pending meeting notes from audit events
+ * @param {number} windowMinutes - Time window in minutes to look back
+ * @param {number} limit - Max number of notes to return
  * @param {Object} client - Database client (optional)
- * @returns {Promise<Object>} Created conversation log
+ * @returns {Promise<Array>} Array of pending meeting notes
  */
-=======
 async function getPendingMeetingNotes(windowMinutes = 180, limit = 100, client = pool) {
   const minutes = Math.max(1, Number.parseInt(windowMinutes, 10) || 180);
   const cappedLimit = Math.max(1, Math.min(Number.parseInt(limit, 10) || 100, 500));
@@ -973,6 +980,12 @@ async function getPendingMeetingNotes(windowMinutes = 180, limit = 100, client =
     }));
 }
 
+/**
+ * Marks meeting notes as summarized in audit events
+ * @param {Array<number|string>} noteIds - Array of note IDs
+ * @param {Object} client - Database client (optional)
+ * @returns {Promise<Array<number>>} Array of updated IDs
+ */
 async function markMeetingNotesSummarized(noteIds, client = pool) {
   if (!Array.isArray(noteIds) || !noteIds.length) {
     return [];
@@ -989,25 +1002,34 @@ async function markMeetingNotesSummarized(noteIds, client = pool) {
       AND event_name = 'focus_note_logged'
     RETURNING id
   `;
-  const { rows } = await client.query(query, [noteIds.map((id) => Number.parseInt(id, 10))]);
+  const { rows } = await client.query(query, [
+    noteIds.map((id) => Number.parseInt(id, 10))
+  ]);
   return rows.map((row) => row.id);
 }
 
->>>>>>> origin/main
-async function logConversationEvent({
-  cliqUserId,
-  channelId,
-  actionType,
-  messageText,
-  metadata = {}
-}, client = pool) {
+/**
+ * Logs a conversation event
+ * @param {Object} eventData - Event data
+ * @param {string} [eventData.cliqUserId] - Cliq user ID
+ * @param {string} [eventData.channelId] - Channel ID
+ * @param {string} eventData.actionType - Type of action
+ * @param {string} [eventData.messageText] - Text of the message
+ * @param {Object} [eventData.metadata] - Extra metadata
+ * @param {Object} client - Database client (optional)
+ * @returns {Promise<Object>} Created conversation log
+ */
+async function logConversationEvent(
+  { cliqUserId, channelId, actionType, messageText, metadata = {} },
+  client = pool
+) {
   if (!actionType) {
     throw new Error('Action type required for conversation event');
   }
-  
+
   // Sanitize and truncate message text
   const sanitizedText = messageText ? String(messageText).slice(0, 1000) : null;
-  
+
   const query = `
     INSERT INTO conversation_logs (cliq_user_id, channel_id, action_type, message_text, metadata)
     VALUES ($1, $2, $3, $4, $5)
@@ -1038,7 +1060,7 @@ function hydrateCredential(row) {
   if (!row) {
     return null;
   }
-  
+
   return {
     cliqUserId: row.cliq_user_id,
     zohoUserId: row.zoho_user_id,
@@ -1061,15 +1083,15 @@ pool.on('error', (error) => {
 });
 
 // Handle pool connection events
-pool.on('connect', (client) => {
+pool.on('connect', () => {
   logger.debug('New database connection established');
 });
 
-pool.on('acquire', (client) => {
+pool.on('acquire', () => {
   logger.debug('Database client acquired from pool');
 });
 
-pool.on('remove', (client) => {
+pool.on('remove', () => {
   logger.debug('Database client removed from pool');
 });
 
